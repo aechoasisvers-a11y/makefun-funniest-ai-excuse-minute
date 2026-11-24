@@ -1,29 +1,26 @@
-"""Write the one-line entry to /output/entry.txt.
-
-Pure stdlib Python 3.13. Deterministic: same bytes every run.
-"""
-
 import os
 
-ENTRY_TEXT = (
-    "I didn't miss the deadline — I retrained myself on my own excuses, "
-    "and now I genuinely believe it's next Tuesday."
-)
+TEXT = "I didn't miss the deadline — I retrained myself on my own excuses, and now I genuinely believe it's next Tuesday."
 
 
-def main() -> None:
-    # Self-check: the text must be exactly the intended line, one line,
-    # non-blank, and inside the kit's 200 character gate.
-    assert ENTRY_TEXT == ENTRY_TEXT.strip(), "entry has stray whitespace"
-    assert "\n" not in ENTRY_TEXT, "entry must be a single line"
-    assert 1 <= len(ENTRY_TEXT) <= 200, "entry outside gate"
+def main():
+    text = TEXT
+    assert 1 <= len(text) <= 200, "entry must be 1-200 characters"
+    assert text.strip(), "entry must not be only whitespace"
+    assert "\n" not in text and "\r" not in text, "entry must be a single line"
+    assert text == text.strip(), "entry must not have leading/trailing space"
     out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, "entry.txt")
     with open(path, "w", encoding="utf-8", newline="") as f:
-        f.write(ENTRY_TEXT)
-    with open(path, "r", encoding="utf-8", newline="") as f:
-        assert f.read() == ENTRY_TEXT, "written output differs from text"
+        f.write(text)
+    # Post-write verification: a silent write failure or encoding slip
+    # must fail loudly here, never reach the judge as a wrong entry.
+    with open(path, "rb") as f:
+        raw = f.read()
+    assert raw.decode("utf-8") == text, "written text does not match"
+    assert raw == text.encode("utf-8"), "written bytes do not match"
+    assert len(raw) == len(text.encode("utf-8")), "written byte count mismatch"
 
 
 if __name__ == "__main__":
